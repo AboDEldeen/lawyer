@@ -45,7 +45,7 @@ export function CaseDrawer({ item, open, onClose, onRefresh }: { item: CaseItem 
       <label><span>{t('totalFees')}</span><input type="number" value={current.total_fees} onChange={(e)=>setCurrent({...current, total_fees:Number(e.target.value)})} /></label>
       <div className="stat-card"><small>{t('paid')}</small><strong>{currency(paid)}</strong></div>
       <div className="stat-card"><small>{t('remaining')}</small><strong>{currency(remaining)}</strong></div>
-      <div className="actions"><button className="primary-btn" onClick={async()=>{ await updateCase(current.id, current); await load(); onRefresh(); }}>{t('save')}</button><button className="danger-btn" onClick={async()=>{ if (confirm('هل تريد حذف هذه القضية؟')) { await deleteCase(current.id); onClose(); onRefresh(); }}}>{t('delete') || 'حذف'}</button></div>
+      <div className="actions"><button className="primary-btn" onClick={async()=>{ await updateCase(current.id, current); await load(); onRefresh(); alert('تم الحفظ بنجاح'); }}>{t('save')}</button><button className="danger-btn" onClick={async()=>{ if (confirm('هل تريد حذف هذه القضية؟')) { await deleteCase(current.id); onClose(); onRefresh(); }}}>{t('delete') || 'حذف'}</button></div>
     </div>}
 
     {tab==='payments' && <div>
