@@ -4,7 +4,7 @@ type Theme = 'light' | 'dark';
 const ThemeContext = createContext<{ theme: Theme; toggleTheme: () => void } | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem('lawyer-theme') as Theme) || 'light');
+  const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem('lawyer-theme') as Theme) || 'dark');
   useEffect(() => {
     localStorage.setItem('lawyer-theme', theme);
     document.documentElement.dataset.theme = theme;
