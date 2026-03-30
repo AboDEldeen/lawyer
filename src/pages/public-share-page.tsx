@@ -10,7 +10,7 @@ export function PublicSharePage() {
     (async () => {
       const data = await getPublicShare(token);
       if (!data || !data.qr.is_active) return setState({ loading: false, valid: false, files: [] });
-      setState({ loading: false, valid: true, title: data.qr.show_case_title ? data.qr.case?.title : undefined, clientName: data.qr.show_client_name ? data.qr.case?.client?.full_name : undefined, allowDownload: data.qr.allow_download, files: data.files });
+      setState({ loading: false, valid: true, title: data.qr.show_case_title ? data.caseItem?.title : undefined, clientName: data.qr.show_client_name ? data.caseItem?.client?.full_name : undefined, allowDownload: data.qr.allow_download, files: data.files });
     })();
   }, [token]);
   if (state.loading) return <div className="public-wrap">Loading...</div>;

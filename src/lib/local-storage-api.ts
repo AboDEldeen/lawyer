@@ -119,7 +119,8 @@ export async function createCase(payload: {
     allow_download: false,
     show_client_name: true,
     show_case_title: true,
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   };
   qrLinks.push(qrLink);
   setStorage(STORAGE_KEYS.qr, qrLinks);
@@ -191,7 +192,8 @@ export async function addPayment(caseId: string, amount: number, paymentDate: st
     amount,
     payment_date: paymentDate,
     note: note || null,
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   };
   
   payments.push(newPayment);
@@ -213,7 +215,8 @@ export async function addNote(caseId: string, content: string) {
     id: uid(),
     case_id: caseId,
     content,
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   };
   
   notes.push(newNote);
