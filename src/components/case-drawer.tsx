@@ -13,19 +13,35 @@ export function CaseDrawer({ item, open, onClose, onRefresh }: { item: CaseItem 
   const [files, setFiles] = useState<CaseFile[]>([]);
   const [notes, setNotes] = useState<CaseNote[]>([]);
   const [activity, setActivity] = useState<ActivityLog[]>([]);
-  const [current, setCurrent] = useState<CaseItem | null>(item);
+  const [current, setCurrent] = useState<CaseItem | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState('');
   const [paymentForm, setPaymentForm] = useState({ amount: 0, payment_date: today(), note: '' });
   const [noteText, setNoteText] = useState('');
 
-  useEffect(() => { setCurrent(item); }, [item]);
-  useEffect(() => { if (item && open) load(); }, [item?.id, open]);
-  async function load() {
-    if (!item) return;
-    const d = await getCaseDetails(item.id);
-    setCurrent(d.caseItem); setPayments(d.payments); setFiles(d.files); setNotes(d.notes); setActivity(d.activity);
-    const publicUrl = `${window.location.origin}/share/${d.caseItem.qr?.token || ''}`;
-    if (d.caseItem.qr?.token) setQrDataUrl(await QRCode.toDataURL(publicUrl));
+  useEffect(() => { 
+    if (open && item) {
+      setCurrent(item);
+      load(item.id);
+    } else {
+      setCurrent(null);
+    }
+  }, [open, item?.id]);
+
+  async function load(id: string) {
+    try {
+      const d = await getCaseDetails(id);
+      setCurrent(d.caseItem); 
+      setPayments(d.payments || []); 
+      setFiles(d.files || []); 
+      setNotes(d.notes || []); 
+      setActivity(d.activity || []);
+      if (d.caseItem.qr?.token) {
+        const publicUrl = `${window.location.origin}/share/${d.caseItem.qr.token}`;
+        setQrDataUrl(await QRCode.toDataURL(publicUrl));
+      }
+    } catch (err) {
+      console.error('Error loading case details:', err);
+    }
   }
   const paid = useMemo(() => payments.reduce((s, p) => s + Number(p.amount || 0), 0), [payments]);
   const remaining = Number(current?.total_fees || 0) - paid;
@@ -45,7 +61,7 @@ export function CaseDrawer({ item, open, onClose, onRefresh }: { item: CaseItem 
       <label><span>{t('totalFees')}</span><input type="number" value={current.total_fees} onChange={(e)=>setCurrent({...current, total_fees:Number(e.target.value)})} /></label>
       <div className="stat-card"><small>{t('paid')}</small><strong>{currency(paid)}</strong></div>
       <div className="stat-card"><small>{t('remaining')}</small><strong>{currency(remaining)}</strong></div>
-      <div className="actions"><button className="primary-btn" onClick={async()=>{ await updateCase(current.id, current); await load(); onRefresh(); alert('تم الحفظ بنجاح'); }}>{t('save')}</button><button className="danger-btn" onClick={async()=>{ if (confirm('هل تريد حذف هذه القضية؟')) { await deleteCase(current.id); onClose(); onRefresh(); }}}>{t('delete') || 'حذف'}</button></div>
+      <div className="actions"><button className="primary-btn" onClick={async()=>{ if(!current) return; await updateCase(current.id, current); await load(current.id); onRefresh(); alert('تم الحفظ بنجاح'); }}>{t('save')}</button><button className="danger-btn" onClick={async()=>{ if(!current) return; if (confirm('هل تريد حذف هذه القضية؟')) { await deleteCase(current.id); onClose(); onRefresh(); }}}>{t('delete') || 'حذف'}</button></div>
     </div>}
 
     {tab==='payments' && <div>
