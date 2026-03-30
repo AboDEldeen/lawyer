@@ -39,11 +39,13 @@ export async function getDashboardStats() {
 
 export async function getCases() {
   const cases = getStorage<any[]>(STORAGE_KEYS.cases, []);
+  const clients = getStorage<Client[]>(STORAGE_KEYS.clients, []);
   const payments = getStorage<Payment[]>(STORAGE_KEYS.payments, []);
   const files = getStorage<CaseFile[]>(STORAGE_KEYS.files, []);
   const qrLinks = getStorage<QrShareLink[]>(STORAGE_KEYS.qr, []);
   
   return cases.map((caseItem) => {
+    const client = clients.find((c) => c.id === caseItem.client_id) || null;
     const casePay = payments.filter((p) => p.case_id === caseItem.id);
     const caseFiles = files.filter((f) => f.case_id === caseItem.id);
     const totalPaid = casePay.reduce((s, p) => s + Number(p.amount || 0), 0);
@@ -51,6 +53,7 @@ export async function getCases() {
     
     return {
       ...caseItem,
+      client,
       total_paid: totalPaid,
       remaining: Number(caseItem.total_fees || 0) - totalPaid,
       files_count: caseFiles.length,
@@ -286,14 +289,16 @@ export async function getPublicShare(token: string) {
   if (!qr) throw new Error('Invalid token');
   
   const cases = getStorage<any[]>(STORAGE_KEYS.cases, []);
+  const clients = getStorage<Client[]>(STORAGE_KEYS.clients, []);
   const files = getStorage<CaseFile[]>(STORAGE_KEYS.files, []);
   
   const caseItem = cases.find((c) => c.id === qr.case_id);
   if (!caseItem) throw new Error('Case not found');
   
+  const client = clients.find((c) => c.id === caseItem.client_id) || null;
   const caseFiles = files.filter((f) => f.case_id === qr.case_id);
   
-  return { qr, caseItem, files: caseFiles };
+  return { qr, caseItem: { ...caseItem, client }, files: caseFiles };
 }
 
 export async function updateQrSettings(caseId: string, settings: Partial<QrShareLink>) {
