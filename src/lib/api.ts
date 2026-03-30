@@ -1,1 +1,1 @@
-export * from './local-storage-api';
+export * from './supabase-api';
