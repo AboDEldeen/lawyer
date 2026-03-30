@@ -158,6 +158,7 @@ export async function getCaseDetails(caseId: string) {
   const files = getStorage<CaseFile[]>(STORAGE_KEYS.files, []);
   const notes = getStorage<CaseNote[]>(STORAGE_KEYS.notes, []);
   const activity = getStorage<ActivityLog[]>(STORAGE_KEYS.activity, []);
+  const qrLinks = getStorage<QrShareLink[]>(STORAGE_KEYS.qr, []);
   
   const caseRow = cases.find((c) => c.id === caseId);
   if (!caseRow) throw new Error('Case not found');
@@ -166,6 +167,7 @@ export async function getCaseDetails(caseId: string) {
   const caseFiles = files.filter((f) => f.case_id === caseId);
   const caseNotes = notes.filter((n) => n.case_id === caseId);
   const caseActivity = activity.filter((a) => a.case_id === caseId);
+  const caseQr = qrLinks.find((q) => q.case_id === caseId);
   
   const totalPaid = casePay.reduce((s, p) => s + Number(p.amount || 0), 0);
   
@@ -174,7 +176,7 @@ export async function getCaseDetails(caseId: string) {
       ...caseRow,
       total_paid: totalPaid,
       remaining: Number(caseRow.total_fees || 0) - totalPaid,
-      qr: null
+      qr: caseQr || null
     } as CaseItem,
     payments: casePay as Payment[],
     files: caseFiles as CaseFile[],
