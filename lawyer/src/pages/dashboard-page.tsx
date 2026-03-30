@@ -1,0 +1,20 @@
+import { useEffect, useState } from 'react';
+import { getCases, getDashboardStats } from '@/lib/api';
+import { currency } from '@/lib/utils';
+import { useLanguage } from '@/contexts/language-context';
+import type { CaseItem } from '@/lib/types';
+import { CaseDrawer } from '@/components/case-drawer';
+import { AddCaseModal } from '@/components/add-case-modal';
+
+export function DashboardPage() {
+  const { t } = useLanguage();
+  const [stats, setStats] = useState({ totalCases: 0, openCases: 0, closedCases: 0, totalFees: 0, totalCollected: 0, remaining: 0 });
+  const [cases, setCases] = useState<CaseItem[]>([]);
+  const [active, setActive] = useState<CaseItem | null>(null);
+  const [showAdd, setShowAdd] = useState(false);
+  const load = async () => { setStats(await getDashboardStats()); setCases((await getCases()).slice(0, 5)); };
+  useEffect(() => { load(); }, []);
+  return <div className="stack gap"><div className="page-head"><h2>{t('dashboard')}</h2><button className="primary-btn" onClick={()=>setShowAdd(true)}>{t('addCase')}</button></div><div className="stats-grid">{[
+    [t('totalCases'), stats.totalCases], [t('openCases'), stats.openCases], [t('closedCases'), stats.closedCases], [t('totalFees'), currency(stats.totalFees)], [t('totalCollected'), currency(stats.totalCollected)], [t('remaining'), currency(stats.remaining)]
+  ].map(([k,v]) => <div key={String(k)} className="stat-card"><small>{k}</small><strong>{v}</strong></div>)}</div><div className="card"><h3>Latest Cases</h3><table className="table"><thead><tr><th>{t('clientName')}</th><th>{t('caseTitle')}</th><th>{t('caseType')}</th><th>{t('remaining')}</th><th></th></tr></thead><tbody>{cases.map(c=><tr key={c.id}><td>{c.client?.full_name}</td><td>{c.title}</td><td>{c.case_type}</td><td>{currency(c.remaining || 0)}</td><td><button className="ghost-btn" onClick={()=>setActive(c)}>{t('details')}</button></td></tr>)}</tbody></table></div><CaseDrawer item={active} open={!!active} onClose={()=>setActive(null)} onRefresh={load} /><AddCaseModal open={showAdd} onClose={()=>setShowAdd(false)} onCreated={load} /></div>;
+}
