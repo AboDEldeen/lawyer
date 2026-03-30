@@ -16,6 +16,10 @@ function makeToken() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+function isVideoFile(file: File) {
+  return file.type.startsWith('video/');
+}
+
 async function logActivity(caseId: string, type: string, description: string) {
   await supabase.from('activity_logs').insert({
     case_id: caseId,
@@ -301,8 +305,73 @@ export async function deleteNote(id: string, caseId: string) {
   await logActivity(caseId, 'note_deleted', 'تم حذف ملاحظة');
 }
 
-export async function uploadFiles(caseId: string, files: File[]) {
+export async function uploadFiles(
+  caseId: string,
+  files: File[],
+  onProgress?: (payload: { fileName: string; percent: number }) => void
+) {
   for (const file of files) {
+    if (isVideoFile(file)) {
+      const signRes = await fetch('/api/r2-presign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName: file.name,
+          contentType: file.type || 'application/octet-stream',
+          caseId
+        })
+      });
+
+      if (!signRes.ok) {
+        throw new Error('Failed to get R2 upload URL');
+      }
+
+      const { uploadUrl, key, publicUrl } = await signRes.json();
+
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', uploadUrl, true);
+        xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable && onProgress) {
+            const percent = Math.round((event.loaded / event.total) * 100);
+            onProgress({ fileName: file.name, percent });
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve();
+          } else {
+            reject(new Error(`R2 upload failed: ${xhr.status}`));
+          }
+        };
+
+        xhr.onerror = () => reject(new Error('R2 upload failed'));
+        xhr.send(file);
+      });
+
+      const { error: insertVideoError } = await supabase.from('case_files').insert({
+        case_id: caseId,
+        file_name: file.name,
+        file_path: key,
+        file_url: publicUrl,
+        mime_type: file.type || null,
+        file_size: file.size,
+        storage_provider: 'r2',
+        is_video: true
+      });
+
+      if (insertVideoError) throw insertVideoError;
+
+      if (onProgress) {
+        onProgress({ fileName: file.name, percent: 100 });
+      }
+
+      continue;
+    }
+
     const ext = file.name.split('.').pop() || '';
     const uniqueName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
     const filePath = `${caseId}/${uniqueName}`;
@@ -327,10 +396,16 @@ export async function uploadFiles(caseId: string, files: File[]) {
       file_path: filePath,
       file_url: publicUrlData.publicUrl,
       mime_type: file.type || null,
-      file_size: file.size
+      file_size: file.size,
+      storage_provider: 'supabase',
+      is_video: false
     });
 
     if (insertError) throw insertError;
+
+    if (onProgress) {
+      onProgress({ fileName: file.name, percent: 100 });
+    }
   }
 
   await logActivity(caseId, 'files_uploaded', `تم رفع ${files.length} ملف(ات)`);
@@ -345,18 +420,25 @@ export async function deleteFile(id: string, caseId: string) {
 
   if (fileReadError) throw fileReadError;
 
-  const { error: storageError } = await supabase.storage
-    .from('case-files')
-    .remove([fileRow.file_path]);
+  if (fileRow.storage_provider === 'r2') {
+    await supabase
+      .from('case_files')
+      .delete()
+      .eq('id', id);
+  } else {
+    const { error: storageError } = await supabase.storage
+      .from('case-files')
+      .remove([fileRow.file_path]);
 
-  if (storageError) throw storageError;
+    if (storageError) throw storageError;
 
-  const { error: deleteError } = await supabase
-    .from('case_files')
-    .delete()
-    .eq('id', id);
+    const { error: deleteError } = await supabase
+      .from('case_files')
+      .delete()
+      .eq('id', id);
 
-  if (deleteError) throw deleteError;
+    if (deleteError) throw deleteError;
+  }
 
   await logActivity(caseId, 'file_deleted', 'تم حذف ملف');
 }
@@ -435,14 +517,21 @@ export async function regenerateQrToken(caseId: string) {
 export async function deleteCase(caseId: string) {
   const { data: caseFiles } = await supabase
     .from('case_files')
-    .select('file_path')
+    .select('file_path, storage_provider')
     .eq('case_id', caseId);
 
-  if (caseFiles?.length) {
+  const supabasePaths = (caseFiles || [])
+    .filter((f: any) => f.storage_provider !== 'r2')
+    .map((f: any) => f.file_path)
+    .filter(Boolean);
+
+  if (supabasePaths.length) {
     await supabase.storage
       .from('case-files')
-      .remove(caseFiles.map((f) => f.file_path));
+      .remove(supabasePaths);
   }
+
+  await supabase.from('case_files').delete().eq('case_id', caseId);
 
   const { error } = await supabase.from('cases').delete().eq('id', caseId);
   if (error) throw error;

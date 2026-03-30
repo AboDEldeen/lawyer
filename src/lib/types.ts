@@ -8,3 +8,17 @@ export type CaseFile = { id: string; case_id: string; file_name: string; file_pa
 export type CaseNote = { id: string; case_id: string; content: string; created_at: string; updated_at: string; };
 export type ActivityLog = { id: string; case_id: string; type: string; description: string; created_at: string; };
 export type QrShareLink = { id: string; case_id: string; token: string; is_active: boolean; allow_download: boolean; show_client_name: boolean; show_case_title: boolean; created_at: string; updated_at: string; };
+export type StorageProvider = 'supabase' | 'r2';
+
+export type CaseFile = {
+  id: string;
+  case_id: string;
+  file_name: string;
+  file_path: string;
+  file_url?: string | null;
+  mime_type?: string | null;
+  file_size?: number | null;
+  uploaded_at: string;
+  storage_provider?: StorageProvider;
+  is_video?: boolean;
+};
