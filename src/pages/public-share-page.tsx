@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getPublicShare } from "../lib/api";
 
-export default function PublicSharePage() {
+export function PublicSharePage() {
   const { token } = useParams();
 
   const [loading, setLoading] = useState(true);
