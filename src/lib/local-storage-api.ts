@@ -154,6 +154,7 @@ export async function updateCase(id: string, values: Partial<CaseItem>) {
 
 export async function getCaseDetails(caseId: string) {
   const cases = getStorage<any[]>(STORAGE_KEYS.cases, []);
+  const clients = getStorage<Client[]>(STORAGE_KEYS.clients, []);
   const payments = getStorage<Payment[]>(STORAGE_KEYS.payments, []);
   const files = getStorage<CaseFile[]>(STORAGE_KEYS.files, []);
   const notes = getStorage<CaseNote[]>(STORAGE_KEYS.notes, []);
@@ -163,6 +164,7 @@ export async function getCaseDetails(caseId: string) {
   const caseRow = cases.find((c) => c.id === caseId);
   if (!caseRow) throw new Error('Case not found');
   
+  const client = clients.find((c) => c.id === caseRow.client_id) || null;
   const casePay = payments.filter((p) => p.case_id === caseId);
   const caseFiles = files.filter((f) => f.case_id === caseId);
   const caseNotes = notes.filter((n) => n.case_id === caseId);
@@ -174,6 +176,7 @@ export async function getCaseDetails(caseId: string) {
   return {
     caseItem: {
       ...caseRow,
+      client: client,
       total_paid: totalPaid,
       remaining: Number(caseRow.total_fees || 0) - totalPaid,
       qr: caseQr || null
