@@ -62,7 +62,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.lang = language;
     document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
   }, [language]);
-  const value = useMemo(() => ({ language, setLanguage, t: (k: keyof typeof dict) => dict[k][language], dir: language === 'ar' ? 'rtl' : 'ltr' }), [language]);
+  const value = useMemo(() => ({ language, setLanguage, t: (k: keyof typeof dict) => dict[k][language], dir: (language === 'ar' ? 'rtl' : 'ltr') as 'rtl' | 'ltr' }), [language]);
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
 export function useLanguage() {

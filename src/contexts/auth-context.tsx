@@ -1,7 +1,7 @@
 import { createContext, useContext, useMemo, useState } from 'react';
 
-const USERNAME = import.meta.env.VITE_APP_USERNAME || 'ahmed';
-const PASSWORD = import.meta.env.VITE_APP_PASSWORD || '123456';
+const USERNAME = 'ahmed';
+const PASSWORD = '123456';
 const STORAGE_KEY = 'lawyer-auth';
 
 type Ctx = {
