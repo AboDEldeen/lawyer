@@ -4,7 +4,7 @@ type Language = 'ar' | 'en';
 
 type Dict = Record<string, { ar: string; en: string }>;
 const dict: Dict = {
-  appName: { ar: 'المحامية مي تونسي', en: 'Lawyer Mai Tunsy' },
+  appName: { ar: 'Lawyer Mai Tunsy', en: 'Lawyer Mai Tunsy' },
   dashboard: { ar: 'الرئيسية', en: 'Dashboard' },
   cases: { ar: 'القضايا', en: 'Cases' },
   logout: { ar: 'خروج', en: 'Logout' },
@@ -15,6 +15,7 @@ const dict: Dict = {
   addCase: { ar: 'إضافة قضية', en: 'Add Case' },
   save: { ar: 'حفظ', en: 'Save' },
   cancel: { ar: 'إلغاء', en: 'Cancel' },
+  delete: { ar: 'حذف', en: 'Delete' },
   details: { ar: 'التفاصيل', en: 'Details' },
   totalFees: { ar: 'إجمالي الأتعاب', en: 'Total Fees' },
   paid: { ar: 'المدفوع', en: 'Paid' },
@@ -62,8 +63,15 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.lang = language;
     document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
   }, [language]);
-  const value = useMemo(() => ({ language, setLanguage, t: (k: keyof typeof dict) => dict[k][language], dir: (language === 'ar' ? 'rtl' : 'ltr') as 'rtl' | 'ltr' }), [language]);
-  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
+const value = useMemo(
+  () => ({
+    language,
+    setLanguage,
+    t: (k: keyof typeof dict) => dict[k]?.[language] || dict[k]?.ar || String(k),
+    dir: (language === 'ar' ? 'rtl' : 'ltr') as 'rtl' | 'ltr'
+  }),
+  [language]
+);  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
 export function useLanguage() {
   const ctx = useContext(LanguageContext);
