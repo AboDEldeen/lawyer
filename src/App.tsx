@@ -1,3 +1,4 @@
+import React from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './contexts/auth-context';
 import { LoginPage } from './pages/login-page';
@@ -6,7 +7,7 @@ import { CasesPage } from './pages/cases-page';
 import { PublicSharePage } from './pages/public-share-page';
 import { AppShell } from './components/app-shell';
 
-function Protected({ children }: { children: JSX.Element }) {
+function Protected({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return children;
