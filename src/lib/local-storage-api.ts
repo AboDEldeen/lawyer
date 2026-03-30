@@ -310,3 +310,27 @@ export async function regenerateQrToken(caseId: string) {
     setStorage(STORAGE_KEYS.qr, qrLinks);
   }
 }
+
+export async function deleteCase(caseId: string) {
+  const cases = getStorage<any[]>(STORAGE_KEYS.cases, []);
+  const payments = getStorage<Payment[]>(STORAGE_KEYS.payments, []);
+  const files = getStorage<CaseFile[]>(STORAGE_KEYS.files, []);
+  const notes = getStorage<CaseNote[]>(STORAGE_KEYS.notes, []);
+  const qrLinks = getStorage<QrShareLink[]>(STORAGE_KEYS.qr, []);
+  const activity = getStorage<ActivityLog[]>(STORAGE_KEYS.activity, []);
+  
+  // Delete case and all related data
+  const filteredCases = cases.filter((c) => c.id !== caseId);
+  const filteredPayments = payments.filter((p) => p.case_id !== caseId);
+  const filteredFiles = files.filter((f) => f.case_id !== caseId);
+  const filteredNotes = notes.filter((n) => n.case_id !== caseId);
+  const filteredQr = qrLinks.filter((q) => q.case_id !== caseId);
+  const filteredActivity = activity.filter((a) => a.case_id !== caseId);
+  
+  setStorage(STORAGE_KEYS.cases, filteredCases);
+  setStorage(STORAGE_KEYS.payments, filteredPayments);
+  setStorage(STORAGE_KEYS.files, filteredFiles);
+  setStorage(STORAGE_KEYS.notes, filteredNotes);
+  setStorage(STORAGE_KEYS.qr, filteredQr);
+  setStorage(STORAGE_KEYS.activity, filteredActivity);
+}
